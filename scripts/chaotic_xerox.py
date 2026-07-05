@@ -105,7 +105,13 @@ def render_distorted_text(img, text, font_path, base_size, start_pos, packing,
         x += char_width * packing
 
 
-def generate_chaotic_xerox(output_filename="render_output.png", main_text=MAIN_TEXT, sub_text=SUB_TEXT):
+# Output lands in <repo>/output regardless of the working directory.
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "output")
+
+
+def generate_chaotic_xerox(output_filename=None, main_text=MAIN_TEXT, sub_text=SUB_TEXT):
+    if output_filename is None:
+        output_filename = os.path.join(OUTPUT_DIR, "render_output.png")
     # 1. Canvas Setup
     width, height = 1200, 1600
     # Start with a slightly off-white background

@@ -37,7 +37,9 @@ LABEL_FONT_CANDIDATES = [
     "arial.ttf",
 ]
 
-OUTPUT_DIR = "."  # prints are saved here as pga-<id>.png
+# Prints are saved here as pga-<id>.png, resolved relative to the repo root
+# so it works no matter where the script is run from.
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "output")
 
 # Force a specific composition by setting SERIES_ID to an 8-digit string,
 # e.g. SERIES_ID = "48291047". Leave as None for a new design each run.

@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Scratch renders (curated prints in output/ are tracked deliberately)
+output/render_output.png
+
+# OS / editor
+.DS_Store
+Thumbs.db
