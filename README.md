@@ -9,12 +9,12 @@ no AI image generation. Every pixel comes from math, typography, and
 pseudorandomness, rendered with Pillow and NumPy.
 
 The design brief lives in [system-role.md](system-role.md): recreate high-end
-experimental graphic design aesthetics (90s Ray Gun brutalism, Swiss grid,
+experimental graphic design aesthetics (90s collage, Swiss Grid,
 procedural art) using only code.
 
 ## Generators
 
-### `scripts/chaotic_xerox.py` — Ray Gun / punk collage
+### `scripts/chaotic_xerox.py` — punk collage
 
 Chaotic Letraset-style typography run through a photocopier-degradation
 pipeline: per-character offset, rotation, and size variation, cut-and-paste
