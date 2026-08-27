@@ -62,10 +62,18 @@ Output: `output/pga-<id>.png`
 
 ## Web studio
 
-An interactive frontend lives alongside the Python generators — a live,
-client-side port of `hofmann_studies.py`. Pick a motif (or let the series id
-choose), set format, palette and margin, and export a print-resolution PNG.
-The **Archive** view browses the curated prints in `output/`.
+An interactive frontend lives alongside the Python generators — live,
+client-side ports of both generators:
+
+- **Hofmann** — pick a motif (or let the series id choose), tune density,
+  scale, format, palette and margin.
+- **Xerox** — type a headline and sub-heading and drive the Ray Gun / punk
+  degradation: Letraset rotation, jitter, packing, overlap-invert mode,
+  collage masks, grit and 1-bit threshold.
+
+Hit **Generate** to spin new versions into the **Archive** — an in-memory
+session gallery that clears on page reload. Export any design as a
+print-resolution PNG.
 
 **Live: [pga-design.vercel.app](https://pga-design.vercel.app)**
 
@@ -80,9 +88,8 @@ like the Python script.
 
 ```
 src/app/          Next.js app router (layout, page, styles)
-src/components/    Studio, ControlRail, CanvasStage, Gallery
-src/lib/           seeded RNG, Swiss grid, motif renderers, tests
-public/gallery/    archived prints
+src/components/    Studio, ControlRail, CanvasStage, Archive
+src/lib/           seeded RNG, Swiss grid, motif + xerox renderers, tests
 ```
 
 CI (`bun run lint`, `typecheck`, `test`, `build`) runs on every push and PR.

@@ -1,12 +1,12 @@
 "use client";
 
-import type { Settings } from "@/lib/types";
+import { compLabel, compSeriesId } from "@/lib/render";
+import type { Composition } from "@/lib/types";
 
 export interface ArchiveItem {
   id: string;
-  settings: Settings;
+  comp: Composition;
   thumb: string; // data URL
-  motif: string;
 }
 
 // In-session archive of generated versions. Held in React state only, so it
@@ -54,7 +54,7 @@ export function Archive({
             </div>
             <p className="mt-2 max-w-xs text-[12px] leading-relaxed text-text-faint">
               Hit <span className="text-text-dim">GENERATE</span> in the studio to
-              spin new versions of a motif. They collect here until you reload.
+              spin new versions. They collect here until you reload.
             </p>
           </div>
         ) : (
@@ -69,15 +69,17 @@ export function Archive({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={item.thumb}
-                    alt={`pga-${item.settings.seriesId}`}
+                    alt={`pga-${compSeriesId(item.comp)}`}
                     className="aspect-[3/4] w-full object-contain transition-transform duration-300 group-hover:scale-[1.02]"
                   />
                 </button>
                 <figcaption className="mt-2 flex items-baseline justify-between gap-2">
                   <span className="mono text-[11px] text-text">
-                    pga-{item.settings.seriesId}
+                    pga-{compSeriesId(item.comp)}
                   </span>
-                  <span className="text-[10px] text-text-faint">{item.motif}</span>
+                  <span className="truncate text-[10px] text-text-faint">
+                    {compLabel(item.comp)}
+                  </span>
                 </figcaption>
               </figure>
             ))}

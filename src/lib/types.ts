@@ -34,6 +34,34 @@ export interface MotifParams {
   scale: number;
 }
 
+export type OverlapMode = "xor" | "char" | "none";
+
+// Chaotic Xerox (Ray Gun) generator — text-driven, ported from
+// scripts/chaotic_xerox.py.
+export interface XeroxSettings {
+  seriesId: string;
+  mainText: string;
+  subText: string;
+  mainSize: number; // headline base px
+  subSize: number; // sub-heading base px
+  sizeVar: number; // ± size fraction per glyph (0–0.6)
+  rotation: number; // max abs rotation in degrees
+  jitter: number; // max per-glyph offset px
+  packing: number; // advance multiplier (<1 overlaps, >1 gaps)
+  overlap: OverlapMode;
+  overlapThreshold: number; // px, "char" mode only
+  masks: number; // collage rectangle count
+  grit: number; // Gaussian noise scale
+  threshold: number; // 1-bit cutoff 0–255
+}
+
+// A composition is one of the two generators, tagged for dispatch.
+export type Composition =
+  | { kind: "hofmann"; settings: Settings }
+  | { kind: "xerox"; settings: XeroxSettings };
+
+export type GeneratorKind = Composition["kind"];
+
 export interface Swatch {
   ink: string;
   paper: string;

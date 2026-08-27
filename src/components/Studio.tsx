@@ -1,17 +1,24 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import { dimsFor, renderStudy, resolveMotif } from "@/lib/study";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { dimsForComp, renderComp } from "@/lib/render";
 import { Rng, randomSeriesId } from "@/lib/rng";
 import { MOTIF_NAMES } from "@/lib/motifs";
-import type { Palette, Settings } from "@/lib/types";
+import type {
+  Composition,
+  GeneratorKind,
+  OverlapMode,
+  Palette,
+  Settings,
+  XeroxSettings,
+} from "@/lib/types";
 import { CanvasStage } from "./CanvasStage";
 import { ControlRail } from "./ControlRail";
 import { Archive, type ArchiveItem } from "./Archive";
 
-type Mode = "studio" | "gallery";
+type Mode = "studio" | "archive";
 
-const DEFAULT_SETTINGS: Settings = {
+const DEFAULT_HOFMANN: Settings = {
   seriesId: "48291047",
   motif: "auto",
   palette: "mono",
@@ -23,6 +30,23 @@ const DEFAULT_SETTINGS: Settings = {
   showLabel: true,
 };
 
+const DEFAULT_XEROX: XeroxSettings = {
+  seriesId: "70481123",
+  mainText: "RAYGUN",
+  subText: "brutalist",
+  mainSize: 300,
+  subSize: 180,
+  sizeVar: 0.22,
+  rotation: 8,
+  jitter: 6,
+  packing: 0.95,
+  overlap: "xor",
+  overlapThreshold: 40,
+  masks: 8,
+  grit: 40,
+  threshold: 140,
+};
+
 const ARCHIVE_CAP = 96;
 
 function freshId(): string {
@@ -31,84 +55,120 @@ function freshId(): string {
   return randomSeriesId(() => rng.random());
 }
 
-// Small offscreen render for an archive thumbnail.
-function makeThumb(settings: Settings): string {
-  const [w, h] = dimsFor(settings.aspect);
+function makeThumb(comp: Composition): string {
+  const [w, h] = dimsForComp(comp);
   const short = 360;
-  const scale = short / Math.min(w, h);
+  const s = short / Math.min(w, h);
   const canvas = document.createElement("canvas");
-  canvas.width = Math.round(w * scale);
-  canvas.height = Math.round(h * scale);
+  canvas.width = Math.round(w * s);
+  canvas.height = Math.round(h * s);
   const ctx = canvas.getContext("2d");
   if (!ctx) return "";
   ctx.scale(canvas.width / w, canvas.height / h);
-  renderStudy(ctx, w, h, settings);
+  renderComp(ctx, w, h, comp);
   return canvas.toDataURL("image/png");
 }
 
 export function Studio() {
   const [mode, setMode] = useState<Mode>("studio");
-  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [generator, setGenerator] = useState<GeneratorKind>("hofmann");
+  const [hof, setHof] = useState<Settings>(DEFAULT_HOFMANN);
+  const [xer, setXer] = useState<XeroxSettings>(DEFAULT_XEROX);
   // Session-only — no persistence, so it resets on reload.
   const [archive, setArchive] = useState<ArchiveItem[]>([]);
   const counter = useRef(0);
 
-  const snapshot = useCallback((s: Settings) => {
+  const comp: Composition = useMemo(
+    () =>
+      generator === "hofmann"
+        ? { kind: "hofmann", settings: hof }
+        : { kind: "xerox", settings: xer },
+    [generator, hof, xer],
+  );
+
+  const snapshot = useCallback((c: Composition) => {
     const item: ArchiveItem = {
-      id: `v${counter.current++}-${s.seriesId}`,
-      settings: s,
-      thumb: makeThumb(s),
-      motif: resolveMotif(s),
+      id: `v${counter.current++}-${c.settings.seriesId}`,
+      comp: c,
+      thumb: makeThumb(c),
     };
     setArchive((prev) => [item, ...prev].slice(0, ARCHIVE_CAP));
   }, []);
 
-  // New version of the *current* motif: reseed, keep everything else, archive.
-  // Side effects stay out of the state updater (StrictMode double-invokes it).
+  // New version of the current generator: reseed, keep everything else, archive.
   const handleGenerate = useCallback(() => {
-    const next = { ...settings, seriesId: freshId() };
-    setSettings(next);
-    snapshot(next);
-  }, [settings, snapshot]);
+    const id = freshId();
+    if (generator === "hofmann") {
+      const next = { ...hof, seriesId: id };
+      setHof(next);
+      snapshot({ kind: "hofmann", settings: next });
+    } else {
+      const next = { ...xer, seriesId: id };
+      setXer(next);
+      snapshot({ kind: "xerox", settings: next });
+    }
+  }, [generator, hof, xer, snapshot]);
 
-  // Surprise: reseed and also reshuffle motif + palette off the new seed.
+  // Surprise: reseed and reshuffle the generator's character off the new seed.
   const handleSurprise = useCallback(() => {
     const id = freshId();
     const r = new Rng(id);
-    const palettes: Palette[] = ["mono", "invert", "blueprint", "risograph"];
-    const next: Settings = {
-      ...settings,
-      seriesId: id,
-      motif: r.random() < 0.5 ? "auto" : r.choice(MOTIF_NAMES),
-      palette: r.choice(palettes),
-    };
-    setSettings(next);
-    snapshot(next);
-  }, [settings, snapshot]);
+    if (generator === "hofmann") {
+      const palettes: Palette[] = ["mono", "invert", "blueprint", "risograph"];
+      const next: Settings = {
+        ...hof,
+        seriesId: id,
+        motif: r.random() < 0.5 ? "auto" : r.choice(MOTIF_NAMES),
+        palette: r.choice(palettes),
+      };
+      setHof(next);
+      snapshot({ kind: "hofmann", settings: next });
+    } else {
+      const overlaps: OverlapMode[] = ["xor", "char", "none"];
+      const next: XeroxSettings = {
+        ...xer,
+        seriesId: id,
+        rotation: Math.round(r.uniform(0, 16)),
+        jitter: Math.round(r.uniform(0, 18)),
+        packing: Number(r.uniform(0.8, 1.1).toFixed(2)),
+        overlap: r.choice(overlaps),
+        masks: r.randint(2, 14),
+        grit: Math.round(r.uniform(20, 60)),
+      };
+      setXer(next);
+      snapshot({ kind: "xerox", settings: next });
+    }
+  }, [generator, hof, xer, snapshot]);
 
-  const handleSnapshot = useCallback(() => snapshot(settings), [settings, snapshot]);
+  const handleSnapshot = useCallback(() => snapshot(comp), [comp, snapshot]);
 
   const handleExport = useCallback(() => {
-    const [w, h] = dimsFor(settings.aspect);
+    const [w, h] = dimsForComp(comp);
     const canvas = document.createElement("canvas");
     canvas.width = w;
     canvas.height = h;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    renderStudy(ctx, w, h, settings);
+    renderComp(ctx, w, h, comp);
     canvas.toBlob((blob) => {
       if (!blob) return;
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `pga-${settings.seriesId}.png`;
+      a.download = `pga-${comp.settings.seriesId}.png`;
       a.click();
       URL.revokeObjectURL(url);
     }, "image/png");
-  }, [settings]);
+  }, [comp]);
 
   const openFromArchive = useCallback((item: ArchiveItem) => {
-    setSettings(item.settings);
+    if (item.comp.kind === "hofmann") {
+      setGenerator("hofmann");
+      setHof(item.comp.settings);
+    } else {
+      setGenerator("xerox");
+      setXer(item.comp.settings);
+    }
     setMode("studio");
   }, []);
 
@@ -116,7 +176,7 @@ export function Studio() {
     <main className="flex h-screen w-screen overflow-hidden bg-bg text-text">
       <div className="min-w-0 flex-1">
         {mode === "studio" ? (
-          <CanvasStage settings={settings} />
+          <CanvasStage comp={comp} />
         ) : (
           <Archive
             items={archive}
@@ -129,8 +189,12 @@ export function Studio() {
         <ControlRail
           mode={mode}
           setMode={setMode}
-          settings={settings}
-          setSettings={setSettings}
+          generator={generator}
+          setGenerator={setGenerator}
+          hof={hof}
+          setHof={setHof}
+          xer={xer}
+          setXer={setXer}
           archiveCount={archive.length}
           onGenerate={handleGenerate}
           onSurprise={handleSurprise}
