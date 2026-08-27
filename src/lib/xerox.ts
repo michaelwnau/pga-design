@@ -126,10 +126,11 @@ function drawLayer(
   }
 }
 
-// Paint one collage block. "xor" inverts underlying pixels where the block
-// overlaps prior ink and paints the solid fill elsewhere; other modes stack a
-// solid block. The block's footprint is folded into the ink mask so later
-// blocks collide with it too.
+// Paint one collage block. When maskInvert is on, text stays visible where the
+// block crosses it, knocked out to the inverse of the block's own fill (white
+// block → black text, black block → white text); the rest of the block is
+// solid fill. When off, the block covers everything. The block's footprint is
+// folded into the ink mask so later blocks knock through it too.
 function stampMask(
   ctx: CanvasRenderingContext2D,
   W: number,
@@ -140,7 +141,7 @@ function stampMask(
   mw: number,
   mh: number,
   fill: number,
-  overlap: XeroxSettings["overlap"],
+  maskInvert: boolean,
 ) {
   const rx = Math.max(0, mx);
   const ry = Math.max(0, my);
@@ -150,22 +151,20 @@ function stampMask(
   const rh = ry1 - ry;
   if (rw <= 0 || rh <= 0) return;
 
+  const inverse = 255 - fill;
   const region = ctx.getImageData(rx, ry, rw, rh);
   const rd = region.data;
   for (let j = 0; j < rh; j++) {
     for (let i = 0; i < rw; i++) {
       const rIdx = (j * rw + i) * 4;
-      if (overlap === "xor" && ink[(ry + j) * W + (rx + i)]) {
-        rd[rIdx] = 255 - rd[rIdx];
-        rd[rIdx + 1] = 255 - rd[rIdx + 1];
-        rd[rIdx + 2] = 255 - rd[rIdx + 2];
-      } else {
-        rd[rIdx] = fill;
-        rd[rIdx + 1] = fill;
-        rd[rIdx + 2] = fill;
-      }
+      const overText = ink[(ry + j) * W + (rx + i)] !== 0;
+      const v = maskInvert && overText ? inverse : fill;
+      rd[rIdx] = v;
+      rd[rIdx + 1] = v;
+      rd[rIdx + 2] = v;
       rd[rIdx + 3] = 255;
-      ink[(ry + j) * W + (rx + i)] = 255;
+      // Only the fill (not the knocked-out text) becomes new collage ink.
+      if (!(maskInvert && overText)) ink[(ry + j) * W + (rx + i)] = 255;
     }
   }
   ctx.putImageData(region, rx, ry);
@@ -202,16 +201,16 @@ export function renderXerox(
     fill: 50,
   });
 
-  // Cut-and-paste collage masks: high-contrast black/white blocks. In "xor"
-  // mode a mask inverts the pixels where it crosses existing text ink instead
-  // of painting over them, so the collision zones flicker like the glyphs do.
+  // Cut-and-paste collage masks: high-contrast black/white blocks. With
+  // maskInvert on, text knocks through them (visible, inverted); otherwise the
+  // blocks cover whatever they land on.
   for (let i = 0; i < x.masks; i++) {
     const mw = rng.randint(100, 600);
     const mh = rng.randint(50, 300);
     const mx = rng.randint(-50, W - Math.floor(mw / 2));
     const my = rng.randint(400, H - mh);
     const fill = rng.random() < 0.5 ? 0 : 255;
-    stampMask(ctx, W, H, ink, mx, my, mw, mh, fill, x.overlap);
+    stampMask(ctx, W, H, ink, mx, my, mw, mh, fill, x.maskInvert);
   }
 
   // Xerox degradation: grayscale → Gaussian grit → hard 1-bit threshold.

@@ -43,6 +43,7 @@ const DEFAULT_XEROX: XeroxSettings = {
   overlap: "xor",
   overlapThreshold: 40,
   masks: 8,
+  maskInvert: true,
   grit: 40,
   threshold: 140,
 };

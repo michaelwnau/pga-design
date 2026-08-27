@@ -280,6 +280,11 @@ function XeroxControls({
       {/* XEROX */}
       <Panel title="XEROX">
         <Slider label="Collage masks" value={xer.masks} min={0} max={16} onChange={(v) => patch({ masks: v })} />
+        <Toggle
+          label="Text knocks through masks"
+          value={xer.maskInvert}
+          onChange={(v) => patch({ maskInvert: v })}
+        />
         <Slider label="Grit" value={xer.grit} min={0} max={80} onChange={(v) => patch({ grit: v })} />
         <Slider label="Threshold" value={xer.threshold} min={60} max={220} onChange={(v) => patch({ threshold: v })} />
       </Panel>

@@ -51,6 +51,7 @@ export interface XeroxSettings {
   overlap: OverlapMode;
   overlapThreshold: number; // px, "char" mode only
   masks: number; // collage rectangle count
+  maskInvert: boolean; // knock text through masks (visible, inverted) vs cover
   grit: number; // Gaussian noise scale
   threshold: number; // 1-bit cutoff 0–255
 }
