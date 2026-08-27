@@ -1,6 +1,7 @@
 [![Made for Claude Code](https://img.shields.io/badge/Made%20for-Claude%20Code-blueviolet?style=flat-square&logo=anthropic)](https://docs.anthropic.com/en/docs/claude-code)
 [![Figma MCP](https://img.shields.io/badge/Figma-MCP%20Server-ff7262?style=flat-square&logo=figma)](https://www.npmjs.com/package/@anthropic-ai/figma-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+[![Live on Vercel](https://img.shields.io/badge/Live-pga--design.vercel.app-000?style=flat-square&logo=vercel)](https://pga-design.vercel.app)
 
 # Programmatic Graphic Design
 
@@ -66,6 +67,8 @@ client-side port of `hofmann_studies.py`. Pick a motif (or let the series id
 choose), set format, palette and margin, and export a print-resolution PNG.
 The **Archive** view browses the curated prints in `output/`.
 
+**Live: [pga-design.vercel.app](https://pga-design.vercel.app)**
+
 ```
 bun install
 bun run dev      # http://localhost:3000
@@ -83,6 +86,7 @@ public/gallery/    archived prints
 ```
 
 CI (`bun run lint`, `typecheck`, `test`, `build`) runs on every push and PR.
+`main` is branch-protected: the `build` check must pass before any merge.
 Dependabot raises grouped minor/patch updates that auto-merge once CI passes;
 major bumps are held for one human review.
 
