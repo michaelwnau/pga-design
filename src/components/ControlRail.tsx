@@ -113,10 +113,7 @@ export function ControlRail({
       )}
 
       <div className="mt-auto border-t border-border px-4 py-4 text-[11px] leading-relaxed text-text-faint">
-        Live ports of{" "}
-        <span className="mono text-text-dim">hofmann_studies.py</span> and{" "}
-        <span className="mono text-text-dim">chaotic_xerox.py</span> — pure math,
-        no diffusion.
+        Pure math, no diffusion.
       </div>
     </div>
   );
