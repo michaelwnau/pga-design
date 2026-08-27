@@ -126,6 +126,51 @@ function drawLayer(
   }
 }
 
+// Paint one collage block. "xor" inverts underlying pixels where the block
+// overlaps prior ink and paints the solid fill elsewhere; other modes stack a
+// solid block. The block's footprint is folded into the ink mask so later
+// blocks collide with it too.
+function stampMask(
+  ctx: CanvasRenderingContext2D,
+  W: number,
+  H: number,
+  ink: Uint8Array,
+  mx: number,
+  my: number,
+  mw: number,
+  mh: number,
+  fill: number,
+  overlap: XeroxSettings["overlap"],
+) {
+  const rx = Math.max(0, mx);
+  const ry = Math.max(0, my);
+  const rx1 = Math.min(W, mx + mw);
+  const ry1 = Math.min(H, my + mh);
+  const rw = rx1 - rx;
+  const rh = ry1 - ry;
+  if (rw <= 0 || rh <= 0) return;
+
+  const region = ctx.getImageData(rx, ry, rw, rh);
+  const rd = region.data;
+  for (let j = 0; j < rh; j++) {
+    for (let i = 0; i < rw; i++) {
+      const rIdx = (j * rw + i) * 4;
+      if (overlap === "xor" && ink[(ry + j) * W + (rx + i)]) {
+        rd[rIdx] = 255 - rd[rIdx];
+        rd[rIdx + 1] = 255 - rd[rIdx + 1];
+        rd[rIdx + 2] = 255 - rd[rIdx + 2];
+      } else {
+        rd[rIdx] = fill;
+        rd[rIdx + 1] = fill;
+        rd[rIdx + 2] = fill;
+      }
+      rd[rIdx + 3] = 255;
+      ink[(ry + j) * W + (rx + i)] = 255;
+    }
+  }
+  ctx.putImageData(region, rx, ry);
+}
+
 export function renderXerox(
   ctx: CanvasRenderingContext2D,
   W: number,
@@ -157,14 +202,16 @@ export function renderXerox(
     fill: 50,
   });
 
-  // Cut-and-paste collage masks: high-contrast black/white blocks.
+  // Cut-and-paste collage masks: high-contrast black/white blocks. In "xor"
+  // mode a mask inverts the pixels where it crosses existing text ink instead
+  // of painting over them, so the collision zones flicker like the glyphs do.
   for (let i = 0; i < x.masks; i++) {
     const mw = rng.randint(100, 600);
     const mh = rng.randint(50, 300);
     const mx = rng.randint(-50, W - Math.floor(mw / 2));
     const my = rng.randint(400, H - mh);
-    ctx.fillStyle = rng.random() < 0.5 ? "#000" : "#fff";
-    ctx.fillRect(mx, my, mw, mh);
+    const fill = rng.random() < 0.5 ? 0 : 255;
+    stampMask(ctx, W, H, ink, mx, my, mw, mh, fill, x.overlap);
   }
 
   // Xerox degradation: grayscale → Gaussian grit → hard 1-bit threshold.
