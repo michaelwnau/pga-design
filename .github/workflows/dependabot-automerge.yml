@@ -36,6 +36,8 @@ jobs:
       - name: Label major updates for human review
         if: ${{ steps.meta.outputs.update-type == 'version-update:semver-major' }}
         run: |
+          gh label create needs-human-review --color D93F0B \
+            --description "Major dependency bump held for owner review" || true
           gh pr edit "$PR_URL" --add-label "needs-human-review"
           gh pr comment "$PR_URL" --body "Major version bump — held for one human review (@michaelwnau) before merge. Auto-merge intentionally not enabled."
         env:
