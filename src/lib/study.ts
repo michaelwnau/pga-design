@@ -60,7 +60,10 @@ export function renderStudy(
 
   if (settings.showGrid) drawGrid(ctx, grid, sw);
 
-  MOTIFS[motifName](ctx, grid, rng, sw);
+  MOTIFS[motifName](ctx, grid, rng, sw, {
+    density: settings.density,
+    scale: settings.scale,
+  });
 
   if (settings.showLabel) drawLabel(ctx, grid, settings.seriesId, motifName, sw);
 }

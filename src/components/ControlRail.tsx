@@ -11,14 +11,20 @@ export function ControlRail({
   setMode,
   settings,
   setSettings,
-  onRandomize,
+  archiveCount,
+  onGenerate,
+  onSurprise,
+  onSnapshot,
   onExport,
 }: {
   mode: Mode;
   setMode: (m: Mode) => void;
   settings: Settings;
   setSettings: React.Dispatch<React.SetStateAction<Settings>>;
-  onRandomize: () => void;
+  archiveCount: number;
+  onGenerate: () => void;
+  onSurprise: () => void;
+  onSnapshot: () => void;
   onExport: () => void;
 }) {
   const patch = (p: Partial<Settings>) => setSettings((s) => ({ ...s, ...p }));
@@ -40,13 +46,30 @@ export function ControlRail({
           onChange={setMode}
           options={[
             { label: "STUDIO", value: "studio" },
-            { label: "ARCHIVE", value: "gallery" },
+            { label: `ARCHIVE${archiveCount ? ` · ${archiveCount}` : ""}`, value: "gallery" },
           ]}
         />
       </Panel>
 
       {mode === "studio" && (
         <>
+          {/* GENERATE */}
+          <Panel title="GENERATE">
+            <Button onClick={onGenerate}>⟳ GENERATE VERSION</Button>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <Button variant="ghost" onClick={onSurprise}>
+                ✦ SURPRISE
+              </Button>
+              <Button variant="ghost" onClick={onSnapshot}>
+                ＋ SNAPSHOT
+              </Button>
+            </div>
+            <div className="mt-2 text-[11px] leading-relaxed text-text-faint">
+              GENERATE reseeds the current motif into a new version and adds it to
+              the session archive. SURPRISE also reshuffles motif + palette.
+            </div>
+          </Panel>
+
           {/* MOTIF */}
           <Panel title="MOTIF">
             <Seg
@@ -67,8 +90,34 @@ export function ControlRail({
             )}
           </Panel>
 
+          {/* PARAMETERS */}
+          <Panel title="PARAMETERS">
+            <Slider
+              label="Density"
+              value={settings.density}
+              min={0.4}
+              max={1.6}
+              step={0.02}
+              onChange={(v) => patch({ density: v })}
+              fmt={(v) => `${Math.round(v * 100)}%`}
+            />
+            <Slider
+              label="Scale"
+              value={settings.scale}
+              min={0.5}
+              max={1.6}
+              step={0.02}
+              onChange={(v) => patch({ scale: v })}
+              fmt={(v) => `${v.toFixed(2)}×`}
+            />
+            <div className="mt-1 text-[11px] leading-relaxed text-text-faint">
+              Density and scale reshape the motif without changing the seed — the
+              same id yields a family of versions.
+            </div>
+          </Panel>
+
           {/* COMPOSITION */}
-          <Panel title="COMPOSITION">
+          <Panel title="COMPOSITION" defaultOpen={false}>
             <div className="mb-2 text-[12px] text-text-dim">Format</div>
             <Seg
               value={settings.aspect}
@@ -114,7 +163,7 @@ export function ControlRail({
           </Panel>
 
           {/* SERIES */}
-          <Panel title="SERIES">
+          <Panel title="SERIES" defaultOpen={false}>
             <div className="mb-2 text-[12px] text-text-dim">
               Series id <span className="text-text-faint">(the RNG seed)</span>
             </div>
@@ -131,15 +180,10 @@ export function ControlRail({
                 className="mono flex-1 rounded-md border border-border-2 bg-panel-2 px-2 py-2 text-[13px] text-text outline-none focus:border-text-dim"
               />
             </div>
-            <div className="mt-3">
-              <Button variant="ghost" onClick={onRandomize}>
-                ⟳ NEW SERIES
-              </Button>
-            </div>
           </Panel>
 
           {/* EXPORT */}
-          <Panel title="EXPORT">
+          <Panel title="EXPORT" defaultOpen={false}>
             <Button onClick={onExport}>↓ PNG</Button>
             <div className="mt-2 text-[11px] text-text-faint">
               Renders at native print resolution.

@@ -9,6 +9,8 @@ const base: Settings = {
   palette: "mono",
   aspect: "3:4",
   margin: 0.08,
+  density: 1,
+  scale: 1,
   showGrid: false,
   showLabel: true,
 };

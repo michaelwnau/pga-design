@@ -1,22 +1,35 @@
 // Canvas ports of the four motif generators in hofmann_studies.py. Each works
 // in pixel space from a SwissGrid and draws with a two-tone ink/paper swatch.
+// A MotifParams pair (density, scale) lets a locked motif spin many versions:
+// density modulates how much of the field is drawn, scale the element size.
 import type { SwissGrid } from "./grid";
 import type { Rng } from "./rng";
-import type { MotifName, Swatch } from "./types";
+import type { MotifName, MotifParams, Swatch } from "./types";
 
 type Ctx = CanvasRenderingContext2D;
 
-function motifDotGradient(ctx: Ctx, grid: SwissGrid, rng: Rng, sw: Swatch) {
+const clamp = (v: number, lo: number, hi: number) =>
+  Math.max(lo, Math.min(hi, v));
+
+function motifDotGradient(
+  ctx: Ctx,
+  grid: SwissGrid,
+  rng: Rng,
+  sw: Swatch,
+  p: MotifParams,
+) {
   // Dot matrix, radius modulated along a random axis — scale progression alone
   // creates direction (the Manual's point studies).
   const axis = rng.choice(["vertical", "horizontal", "diagonal", "radial"] as const);
   const invert = rng.random() < 0.5;
-  const maxR = Math.min(grid.cellW, grid.cellH) * rng.uniform(0.42, 0.5);
+  const maxR = Math.min(grid.cellW, grid.cellH) * rng.uniform(0.42, 0.5) * p.scale;
   const minR = maxR * rng.uniform(0.04, 0.15);
 
   ctx.fillStyle = sw.ink;
   for (let row = 0; row < grid.rows; row++) {
     for (let col = 0; col < grid.cols; col++) {
+      // density < 1 knocks out dots for a sparser field.
+      if (rng.random() > p.density) continue;
       let t: number;
       if (axis === "vertical") t = row / (grid.rows - 1);
       else if (axis === "horizontal") t = col / (grid.cols - 1);
@@ -38,11 +51,19 @@ function motifDotGradient(ctx: Ctx, grid: SwissGrid, rng: Rng, sw: Swatch) {
   }
 }
 
-function motifCircleSquare(ctx: Ctx, grid: SwissGrid, rng: Rng, sw: Swatch) {
+function motifCircleSquare(
+  ctx: Ctx,
+  grid: SwissGrid,
+  rng: Rng,
+  sw: Swatch,
+  p: MotifParams,
+) {
   // Figure/ground tension: a solid square field with a dominant circle
   // straddling its edge, so the circle reads paper over ink and ink over paper.
-  const fieldCols = rng.randint(Math.floor(grid.cols / 2), grid.cols);
-  const fieldRows = rng.randint(Math.floor(grid.rows / 2), grid.rows);
+  const minCols = Math.max(2, Math.round((grid.cols / 2) * p.density));
+  const minRows = Math.max(2, Math.round((grid.rows / 2) * p.density));
+  const fieldCols = rng.randint(Math.min(minCols, grid.cols), grid.cols);
+  const fieldRows = rng.randint(Math.min(minRows, grid.rows), grid.rows);
   const fieldCol = rng.randint(0, grid.cols - fieldCols);
   const fieldRow = rng.randint(0, grid.rows - fieldRows);
   const field = grid.cell(fieldCol, fieldRow, fieldCols, fieldRows);
@@ -50,10 +71,11 @@ function motifCircleSquare(ctx: Ctx, grid: SwissGrid, rng: Rng, sw: Swatch) {
   ctx.fillStyle = sw.ink;
   ctx.fillRect(field.x0, field.y0, field.x1 - field.x0, field.y1 - field.y0);
 
-  const diamCells = rng.randint(
+  const baseCells = rng.randint(
     Math.min(4, Math.floor(grid.cols / 2)),
     Math.min(8, grid.cols),
   );
+  const diamCells = clamp(Math.round(baseCells * p.scale), 2, grid.cols);
   const diam = diamCells * Math.min(grid.cellW, grid.cellH);
   const edge = rng.choice(["left", "right", "top", "bottom"] as const);
   let cx: number;
@@ -88,11 +110,18 @@ function motifCircleSquare(ctx: Ctx, grid: SwissGrid, rng: Rng, sw: Swatch) {
   ctx.restore();
 }
 
-function motifRhythmicBars(ctx: Ctx, grid: SwissGrid, rng: Rng, sw: Swatch) {
+function motifRhythmicBars(
+  ctx: Ctx,
+  grid: SwissGrid,
+  rng: Rng,
+  sw: Swatch,
+  p: MotifParams,
+) {
   // Vertical bars whose widths follow a rhythmic progression — interval and
   // tempo, the Manual's line studies.
   const progression = rng.choice(["linear", "geometric", "pendulum"] as const);
-  const nBars = rng.randint(9, 18);
+  const baseBars = rng.randint(9, 18);
+  const nBars = clamp(Math.round(baseBars * p.density), 3, 40);
   const topRow = rng.randint(0, 2);
   const bottomRow = grid.rows - rng.randint(0, 2);
   const y0 = grid.y0 + topRow * grid.cellH;
@@ -109,27 +138,35 @@ function motifRhythmicBars(ctx: Ctx, grid: SwissGrid, rng: Rng, sw: Swatch) {
   }
   if (rng.random() < 0.5) widths.reverse();
 
-  const gap = grid.cellW * rng.uniform(0.25, 0.7);
+  // scale > 1 thins the gaps (fatter bars); scale < 1 opens them up.
+  const gap = grid.cellW * rng.uniform(0.25, 0.7) * clamp(2 - p.scale, 0.3, 1.75);
   const totalGap = gap * (nBars - 1);
   const sum = widths.reduce((a, b) => a + b, 0);
-  const scale = (grid.w - totalGap) / sum;
+  const scaleW = (grid.w - totalGap) / sum;
 
   ctx.fillStyle = sw.ink;
   let x = grid.x0;
   for (const w of widths) {
-    const bw = w * scale;
+    const bw = w * scaleW;
     ctx.fillRect(x, y0, bw, y1 - y0);
     x += bw + gap;
   }
 }
 
-function motifQuarterCircles(ctx: Ctx, grid: SwissGrid, rng: Rng, sw: Swatch) {
+function motifQuarterCircles(
+  ctx: Ctx,
+  grid: SwissGrid,
+  rng: Rng,
+  sw: Swatch,
+  p: MotifParams,
+) {
   // Tiled quarter-circle arcs with pseudorandom orientation flips — the
   // Manual's curved/straight combinatorics.
-  const tileSpan = rng.choice([2, 3, 4] as const);
+  // scale picks the tiling coarseness; density how many tiles fire.
+  const tileSpan = p.scale >= 1.15 ? 4 : p.scale <= 0.75 ? 2 : rng.choice([2, 3, 4] as const);
   const cols = Math.floor(grid.cols / tileSpan);
   const rows = Math.floor(grid.rows / tileSpan);
-  const density = rng.uniform(0.55, 0.9);
+  const density = clamp(rng.uniform(0.55, 0.9) * p.density, 0.1, 1);
 
   ctx.fillStyle = sw.ink;
   for (let row = 0; row < rows; row++) {
@@ -171,7 +208,7 @@ function motifQuarterCircles(ctx: Ctx, grid: SwissGrid, rng: Rng, sw: Swatch) {
 
 export const MOTIFS: Record<
   MotifName,
-  (ctx: Ctx, grid: SwissGrid, rng: Rng, sw: Swatch) => void
+  (ctx: Ctx, grid: SwissGrid, rng: Rng, sw: Swatch, p: MotifParams) => void
 > = {
   circle_square: motifCircleSquare,
   dot_gradient: motifDotGradient,

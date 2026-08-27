@@ -21,8 +21,17 @@ export interface Settings {
   palette: Palette;
   aspect: AspectId;
   margin: number; // outer margin as a fraction of the short edge (0–0.2)
+  density: number; // element count / coverage multiplier (0.4–1.6)
+  scale: number; // element size multiplier (0.5–1.6)
   showGrid: boolean;
   showLabel: boolean;
+}
+
+// Per-render knobs threaded into every motif so a locked motif can still be
+// pushed into many distinct versions without changing the seed.
+export interface MotifParams {
+  density: number;
+  scale: number;
 }
 
 export interface Swatch {
