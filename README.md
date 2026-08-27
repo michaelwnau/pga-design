@@ -59,11 +59,39 @@ python scripts/hofmann_studies.py
 
 Output: `output/pga-<id>.png`
 
+## Web studio
+
+An interactive frontend lives alongside the Python generators — a live,
+client-side port of `hofmann_studies.py`. Pick a motif (or let the series id
+choose), set format, palette and margin, and export a print-resolution PNG.
+The **Archive** view browses the curated prints in `output/`.
+
+```
+bun install
+bun run dev      # http://localhost:3000
+```
+
+The studio is a Next.js 16 + React 19 + Tailwind v4 app (Bun toolchain),
+deployed on Vercel. Same series id always regenerates the same design, exactly
+like the Python script.
+
+```
+src/app/          Next.js app router (layout, page, styles)
+src/components/    Studio, ControlRail, CanvasStage, Gallery
+src/lib/           seeded RNG, Swiss grid, motif renderers, tests
+public/gallery/    archived prints
+```
+
+CI (`bun run lint`, `typecheck`, `test`, `build`) runs on every push and PR.
+Dependabot raises grouped minor/patch updates that auto-merge once CI passes;
+major bumps are held for one human review.
+
 ## Layout
 
 ```
-scripts/   generators
+scripts/   Python generators
 output/    rendered prints
+src/       web studio (Next.js)
 ```
 
 ## Requirements

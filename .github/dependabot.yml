@@ -1,0 +1,44 @@
+version: 2
+updates:
+  # Application dependencies (package.json — bun uses the npm ecosystem).
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    groups:
+      # Minor + patch land in one grouped PR and auto-merge once CI passes.
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Majors are raised individually so each gets its own human review.
+      major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+
+  # Keep the GitHub Actions used by CI up to date too.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    labels:
+      - "ci"
+    groups:
+      actions-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      actions-major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"

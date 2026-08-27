@@ -1,0 +1,43 @@
+name: Dependabot auto-merge
+
+# Auto-merges Dependabot PRs for minor, patch and security updates once the
+# required "build" check passes (branch protection on main enforces the wait).
+#
+# Major version bumps are deliberately NOT auto-merged: they are left open for
+# one human review (the repo owner) before merging.
+
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  automerge:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v3
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      # Minor + patch (any ecosystem). Security updates are also covered:
+      # Dependabot raises them as patch/minor bumps, which match here.
+      - name: Enable auto-merge for minor and patch updates
+        if: ${{ steps.meta.outputs.update-type != 'version-update:semver-major' }}
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Majors: flag for the human reviewer, do not merge.
+      - name: Label major updates for human review
+        if: ${{ steps.meta.outputs.update-type == 'version-update:semver-major' }}
+        run: |
+          gh pr edit "$PR_URL" --add-label "needs-human-review"
+          gh pr comment "$PR_URL" --body "Major version bump — held for one human review (@michaelwnau) before merge. Auto-merge intentionally not enabled."
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

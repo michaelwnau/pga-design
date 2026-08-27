@@ -1,0 +1,36 @@
+{
+  "name": "pga-design-studio",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "oxlint && eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint:oxlint": "oxlint",
+    "lint:next": "eslint ."
+  },
+  "dependencies": {
+    "next": "16.3.2",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@next/eslint-plugin-next": "^16.3.2",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^26",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@typescript-eslint/parser": "^8.67.0",
+    "@vitest/coverage-v8": "^4.1.11",
+    "eslint": "^10.9.0",
+    "oxlint": "^1.79.0",
+    "tailwindcss": "^4",
+    "typescript": "5.9.3",
+    "vitest": "^4.1.11"
+  }
+}
