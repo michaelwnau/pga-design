@@ -174,32 +174,37 @@ function motifQuarterCircles(
       if (rng.random() > density) continue;
       const rect = grid.cell(col * tileSpan, row * tileSpan, tileSpan, tileSpan);
       const { x0, y0, x1, y1 } = rect;
-      const w = x1 - x0;
+      // Radii = the tile's own width AND height, so the quarter fills a
+      // rectangular cell exactly (cellW != cellH). A single circular radius
+      // left a gap on the longer axis and offset the crescents.
+      const rw = x1 - x0;
+      const rh = y1 - y0;
       const corner = rng.randint(0, 3);
-      // Anchor a solid quarter-disc to one corner of the tile.
-      let ax: number;
-      let ay: number;
+      // Centre the ellipse on the anchor corner; sweep the quarter into the
+      // tile. Angles match the Python pieslice (0=+x, PI/2=+y downward).
+      let cx: number;
+      let cy: number;
       let start: number;
       if (corner === 0) {
-        ax = x1;
-        ay = y1;
-        start = Math.PI;
-      } else if (corner === 1) {
-        ax = x0;
-        ay = y1;
-        start = Math.PI * 1.5;
-      } else if (corner === 2) {
-        ax = x0;
-        ay = y0;
+        cx = x0;
+        cy = y0;
         start = 0;
+      } else if (corner === 1) {
+        cx = x1;
+        cy = y0;
+        start = Math.PI / 2;
+      } else if (corner === 2) {
+        cx = x1;
+        cy = y1;
+        start = Math.PI;
       } else {
-        ax = x1;
-        ay = y0;
-        start = Math.PI * 0.5;
+        cx = x0;
+        cy = y1;
+        start = Math.PI * 1.5;
       }
       ctx.beginPath();
-      ctx.moveTo(ax, ay);
-      ctx.arc(ax, ay, w, start, start + Math.PI / 2);
+      ctx.moveTo(cx, cy);
+      ctx.ellipse(cx, cy, rw, rh, 0, start, start + Math.PI / 2);
       ctx.closePath();
       ctx.fill();
     }
