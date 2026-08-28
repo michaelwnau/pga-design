@@ -28,3 +28,24 @@ export function compLabel(comp: Composition): string {
 export function compSeriesId(comp: Composition): string {
   return comp.settings.seriesId;
 }
+
+// Render a composition to a fresh canvas at native resolution.
+function renderToCanvas(comp: Composition): HTMLCanvasElement {
+  const [w, h] = dimsForComp(comp);
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (ctx) renderComp(ctx, w, h, comp);
+  return canvas;
+}
+
+export function renderDataUrl(comp: Composition): string {
+  return renderToCanvas(comp).toDataURL("image/png");
+}
+
+export function renderBlob(comp: Composition): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    renderToCanvas(comp).toBlob((b) => resolve(b), "image/png");
+  });
+}
