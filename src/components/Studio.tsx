@@ -5,10 +5,10 @@ import { dimsForComp, renderComp } from "@/lib/render";
 import { Rng, randomSeriesId } from "@/lib/rng";
 import { MOTIF_NAMES } from "@/lib/motifs";
 import type {
+  ColorId,
   Composition,
   GeneratorKind,
   OverlapMode,
-  Palette,
   Settings,
   XeroxSettings,
 } from "@/lib/types";
@@ -21,7 +21,8 @@ type Mode = "studio" | "archive";
 const DEFAULT_HOFMANN: Settings = {
   seriesId: "48291047",
   motif: "auto",
-  palette: "mono",
+  paper: "paper",
+  ink: "black",
   aspect: "3:4",
   margin: 0.08,
   density: 1,
@@ -115,12 +116,18 @@ export function Studio() {
     const id = freshId();
     const r = new Rng(id);
     if (generator === "hofmann") {
-      const palettes: Palette[] = ["mono", "invert", "blueprint", "risograph"];
+      // Off-white or white ground, a contrasting ink that is often a primary.
+      const papers: ColorId[] = ["paper", "white", "black"];
+      const paper = r.choice(papers);
+      const inkChoices: ColorId[] = (
+        paper === "black" ? ["white", "red", "yellow", "blue"] : ["black", "red", "yellow", "blue"]
+      ) as ColorId[];
       const next: Settings = {
         ...hof,
         seriesId: id,
         motif: r.random() < 0.5 ? "auto" : r.choice(MOTIF_NAMES),
-        palette: r.choice(palettes),
+        paper,
+        ink: r.choice(inkChoices),
       };
       setHof(next);
       snapshot({ kind: "hofmann", settings: next });

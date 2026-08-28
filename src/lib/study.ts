@@ -4,16 +4,19 @@
 import { SwissGrid } from "./grid";
 import { MOTIFS, MOTIF_NAMES } from "./motifs";
 import { Rng } from "./rng";
-import type { AspectId, MotifName, Palette, Settings, Swatch } from "./types";
+import type { AspectId, ColorId, MotifName, Settings, Swatch } from "./types";
 
 export const GRID_COLS = 12;
 export const GRID_ROWS = 16;
 
-const PALETTES: Record<Palette, Swatch> = {
-  mono: { ink: "#0a0a0a", paper: "#f4f2ec", accent: "#ff3b1d" },
-  invert: { ink: "#f4f2ec", paper: "#0a0a0a", accent: "#ff3b1d" },
-  blueprint: { ink: "#e8ecff", paper: "#0b1f5b", accent: "#ff3b1d" },
-  risograph: { ink: "#111111", paper: "#f3e9dd", accent: "#ff4a1d" },
+// Hex for every selectable colour — neutrals plus bold primaries.
+export const COLORS: Record<ColorId, string> = {
+  paper: "#f4f2ec",
+  white: "#ffffff",
+  black: "#0a0a0a",
+  red: "#e8291c",
+  yellow: "#f4c400",
+  blue: "#1a4cff",
 };
 
 const ASPECTS: Record<AspectId, [number, number]> = {
@@ -22,8 +25,19 @@ const ASPECTS: Record<AspectId, [number, number]> = {
   "4:3": [1600, 1200],
 };
 
-export function swatchFor(palette: Palette): Swatch {
-  return PALETTES[palette];
+export function colorHex(id: ColorId): string {
+  return COLORS[id];
+}
+
+// Build the two-tone swatch from the chosen ink + paper. The grid-overlay
+// accent stays red unless the ink is already red (then it flips to blue) so it
+// always reads against the elements.
+export function swatchFor(settings: Settings): Swatch {
+  return {
+    ink: COLORS[settings.ink],
+    paper: COLORS[settings.paper],
+    accent: settings.ink === "red" ? COLORS.blue : COLORS.red,
+  };
 }
 
 export function dimsFor(aspect: AspectId): [number, number] {
@@ -43,7 +57,7 @@ export function renderStudy(
   height: number,
   settings: Settings,
 ) {
-  const sw = swatchFor(settings.palette);
+  const sw = swatchFor(settings);
   const rng = new Rng(settings.seriesId);
 
   // Ground.

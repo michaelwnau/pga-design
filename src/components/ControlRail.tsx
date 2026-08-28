@@ -1,12 +1,14 @@
 "use client";
 
-import type {
-  GeneratorKind,
-  OverlapMode,
-  Settings,
-  XeroxSettings,
+import {
+  COLOR_IDS,
+  type ColorId,
+  type GeneratorKind,
+  type OverlapMode,
+  type Settings,
+  type XeroxSettings,
 } from "@/lib/types";
-import { resolveMotif } from "@/lib/study";
+import { colorHex, resolveMotif } from "@/lib/study";
 import { Button, Panel, Seg, Slider, Toggle } from "./ui";
 
 type Mode = "studio" | "archive";
@@ -185,18 +187,16 @@ function HofmannControls({
             { label: "4:3", value: "4:3" },
           ]}
         />
-        <div className="mt-3 mb-2 text-[12px] text-text-dim">Palette</div>
-        <Seg
-          value={hof.palette}
-          onChange={(v) => patch({ palette: v })}
-          options={[
-            { label: "MONO", value: "mono" },
-            { label: "INV", value: "invert" },
-            { label: "BLUE", value: "blueprint" },
-            { label: "RISO", value: "risograph" },
-          ]}
-        />
-        <div className="mt-2">
+        <div className="mt-3 mb-2 text-[12px] text-text-dim">Background</div>
+        <ColorPicker value={hof.paper} onChange={(v) => patch({ paper: v })} />
+        <div className="mt-3 mb-2 text-[12px] text-text-dim">Elements</div>
+        <ColorPicker value={hof.ink} onChange={(v) => patch({ ink: v })} />
+        {hof.ink === hof.paper && (
+          <div className="mt-2 text-[11px] text-accent">
+            Elements match the background — no contrast.
+          </div>
+        )}
+        <div className="mt-3">
           <Slider
             label="Margin"
             value={hof.margin}
@@ -291,6 +291,37 @@ function XeroxControls({
         <SeedInput value={xer.seriesId} onChange={(v) => patch({ seriesId: v })} />
       </Panel>
     </>
+  );
+}
+
+function ColorPicker({
+  value,
+  onChange,
+}: {
+  value: ColorId;
+  onChange: (v: ColorId) => void;
+}) {
+  return (
+    <div className="flex gap-2">
+      {COLOR_IDS.map((id) => {
+        const active = id === value;
+        return (
+          <button
+            key={id}
+            onClick={() => onChange(id)}
+            title={id}
+            aria-label={id}
+            aria-pressed={active}
+            className={`h-7 w-7 rounded-full border transition-transform ${
+              active
+                ? "scale-110 border-text ring-2 ring-text ring-offset-2 ring-offset-panel"
+                : "border-border-2 hover:scale-105"
+            }`}
+            style={{ backgroundColor: colorHex(id) }}
+          />
+        );
+      })}
+    </div>
   );
 }
 

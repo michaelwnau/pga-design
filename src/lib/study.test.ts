@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { MOTIF_NAMES } from "./motifs";
-import { dimsFor, resolveMotif, swatchFor } from "./study";
+import { COLORS, colorHex, dimsFor, resolveMotif, swatchFor } from "./study";
+import { COLOR_IDS, PRIMARY_COLORS } from "./types";
 import type { Settings } from "./types";
 
 const base: Settings = {
   seriesId: "48291047",
   motif: "auto",
-  palette: "mono",
+  paper: "paper",
+  ink: "black",
   aspect: "3:4",
   margin: 0.08,
   density: 1,
@@ -53,11 +55,28 @@ describe("dimsFor", () => {
   });
 });
 
-describe("swatchFor", () => {
-  it("gives distinct ink and paper for every palette", () => {
-    for (const p of ["mono", "invert", "blueprint", "risograph"] as const) {
-      const sw = swatchFor(p);
-      expect(sw.ink).not.toBe(sw.paper);
+describe("colors", () => {
+  it("has a hex for every selectable colour id", () => {
+    for (const id of COLOR_IDS) {
+      expect(colorHex(id)).toMatch(/^#[0-9a-f]{6}$/i);
     }
+  });
+
+  it("includes the three primaries", () => {
+    expect(PRIMARY_COLORS).toEqual(["red", "yellow", "blue"]);
+    for (const p of PRIMARY_COLORS) expect(COLORS[p]).toBeTruthy();
+  });
+});
+
+describe("swatchFor", () => {
+  it("maps ink and paper straight from the settings", () => {
+    const sw = swatchFor({ ...base, ink: "red", paper: "white" });
+    expect(sw.ink).toBe(COLORS.red);
+    expect(sw.paper).toBe(COLORS.white);
+  });
+
+  it("keeps a contrasting grid accent when the ink is red", () => {
+    expect(swatchFor({ ...base, ink: "red" }).accent).toBe(COLORS.blue);
+    expect(swatchFor({ ...base, ink: "black" }).accent).toBe(COLORS.red);
   });
 });

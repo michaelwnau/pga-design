@@ -10,7 +10,19 @@ export type MotifName =
 // rng.choice(sorted(MOTIFS)) behaviour.
 export type MotifChoice = MotifName | "auto";
 
-export type Palette = "mono" | "invert" | "blueprint" | "risograph";
+// The picker palette: neutrals plus the three primary colours. Any of these
+// can be applied to the background (paper) or the design elements (ink).
+export type ColorId = "paper" | "black" | "white" | "red" | "yellow" | "blue";
+
+export const PRIMARY_COLORS: ColorId[] = ["red", "yellow", "blue"];
+export const COLOR_IDS: ColorId[] = [
+  "paper",
+  "white",
+  "black",
+  "red",
+  "yellow",
+  "blue",
+];
 
 export type AspectId = "3:4" | "1:1" | "4:3";
 
@@ -18,7 +30,8 @@ export interface Settings {
   // Eight-digit series id — doubles as the RNG seed (same id → same design).
   seriesId: string;
   motif: MotifChoice;
-  palette: Palette;
+  paper: ColorId; // background colour
+  ink: ColorId; // design-element colour
   aspect: AspectId;
   margin: number; // outer margin as a fraction of the short edge (0–0.2)
   density: number; // element count / coverage multiplier (0.4–1.6)
